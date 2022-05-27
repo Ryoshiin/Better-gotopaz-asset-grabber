@@ -1,6 +1,6 @@
 # A simple tool to download the assets from Gotopazu
  
- A very simple tool to easily get assets which can then be viewed with [AssetStudio](https://github.com/Perfare/AssetStudio), just open the files in there and view them, it's that easy.
+ A very simple tool to easily get assets which can then be viewed with [AssetStudio](https://github.com/Perfare/AssetStudio), just open the files in there and view them, it's that easy. Just grab the newest release from the [releases](https://github.com/notmynamex/gotopaz-asset-grabber/releases/latest) page!
  
  Only requirements are:
  - Wget on path (download newest version on [the windows mirror page](http://gnuwin32.sourceforge.net/packages/wget.htm). Also here a [short tutorial](https://www.addictivetips.com/windows-tips/install-and-use-wget-in-windows-10/) on how to add it to path.
