@@ -14,12 +14,14 @@ response = requests.get(url).text
 print(response)
 if "メンテナンス中" in response:
     raise Exception("Server is in maintenance")
+os.mkdir("unity2d_all")
 fileNames = set(re.findall(r"[0-9a-f]{32}", response))
 finddir = set(os.listdir("unity2d_all"))
 filelist = list(fileNames-finddir)
 print(filelist)
 for file in filelist:
     url = "https://assets.enish-games.com/assets-cancer/Resources/android/"+file
+
     os.system(
         " ".join([
             'wget',
@@ -35,4 +37,3 @@ for file in filelist:
         ])
     )
     time.sleep(random.uniform(0.1, 1))
-    os.system('python g.py')
