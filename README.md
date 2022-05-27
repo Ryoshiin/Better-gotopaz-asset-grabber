@@ -8,3 +8,10 @@
 - Eyes and the ability to remember/copy a version number on the Google Play Store.
 
 and nothing else really, have fun!
+
+To do:
+
+- GUI
+- A config file of some sort to config the output directory or something
+- Automatically get the newest version
+- Alternatively, remember the last entered version and make a GUI button to easily select it
