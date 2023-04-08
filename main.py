@@ -1,101 +1,124 @@
-import re, requests, os, time, random, logging
-from PyQt5 import QtWidgets, QtGui
+import sys, re, requests, os, time, random, traceback, google_play_scraper
+from PyQt5.QtWidgets import QApplication, QWidget, QVBoxLayout, QLabel, QLineEdit, QPushButton, QTextEdit, QProgressBar, QMessageBox
+from PyQt5.QtCore import QThread, pyqtSignal, Qt
 
-logging.basicConfig(
-    level=logging.INFO,
-    format='%(levelname)s: %(message)s')
+# Subclass for downloading files in a separate thread
+class DownloadThread(QThread):
+    log_signal = pyqtSignal(str)
+    progress_signal = pyqtSignal(int)
 
-class MainWindow(QtWidgets.QMainWindow):
+    def __init__(self, url, version, output_dir, file_list):
+        super().__init__()
+        self.url = url
+        self.version = version
+        self.output_dir = output_dir
+        self.file_list = file_list
+
+    def run(self):
+        total_files = len(self.file_list) # Get the total number  of files to download
+        downloaded_files = 0 
+
+        for file in self.file_list:
+            file_url = f"https://assets.enish-games.com/assets-cancer/Resources/android/{file}"
+            self.log_signal.emit(f"Downloading {file}")
+
+            response = requests.get(file_url, stream=True)
+            with open(os.path.join(self.output_dir, file), 'wb') as f:
+                for chunk in response.iter_content(chunk_size=8192):
+                    if chunk:
+                        f.write(chunk)
+
+            time.sleep(random.uniform(0.1, 1))
+            self.log_signal.emit(f"{file} downloaded")
+
+            downloaded_files += 1
+            self.progress_signal.emit(int(downloaded_files / total_files * 100))
+
+        self.log_signal.emit("All files are downloaded")
+
+class MyApp(QWidget):
+# Class for the gui window
     def __init__(self):
         super().__init__()
         self.initUI()
 
     def initUI(self):
-        # Create a QLineEdit widget to enter the version number
-        self.versionEdit = QtWidgets.QLineEdit(self)
-        self.versionEdit.move(20, 20)
-        self.versionEdit.resize(200, 32)
+        layout = QVBoxLayout()
 
-        # Create a QPushButton to start the download
-        self.downloadButton = QtWidgets.QPushButton('Start Download', self)
-        self.downloadButton.move(20, 60)
-        self.downloadButton.resize(200, 32)
-        self.downloadButton.clicked.connect(self.startDownload)
-    
-        # Set window properties
-        self.setGeometry(300, 300, 250, 150)
-        self.setWindowTitle('Unity2D Downloader')
-        self.setWindowIcon(QtGui.QIcon('icon.png'))
-        self.show()
+        self.versionLabel = QLabel("Version:")
+        layout.addWidget(self.versionLabel)
+        
 
-    def startDownload(self):
+        self.versionLineEdit = QLineEdit()
+        self.versionLineEdit.setAlignment(Qt.AlignCenter)
+        layout.addWidget(self.versionLineEdit)
+        
+        self.downloadButton = QPushButton("Download")
+        self.downloadButton.clicked.connect(self.on_download_button_clicked)
+        layout.addWidget(self.downloadButton)
+
+        self.latestVersionButton = QPushButton("Latest Version")
+        self.latestVersionButton.clicked.connect(self.on_latest_version_button_clicked)
+        layout.addWidget(self.latestVersionButton)
+
+        self.outputDirLabel = QLabel("Output Directory:")
+        layout.addWidget(self.outputDirLabel)
+
+        self.progressBar = QProgressBar()
+        layout.addWidget(self.progressBar)
+
+        self.logLabel = QLabel("Log:")
+        layout.addWidget(self.logLabel)
+
+        self.logTextEdit = QTextEdit()
+        layout.addWidget(self.logTextEdit)
+        self.setLayout(layout)
+        self.setLayout(layout)
+        self.setWindowTitle("Gotoupazu Assets Grabber")
+        self.setGeometry(600, 600, 800, 600)
+
+    def on_download_button_clicked(self):
+        version = self.versionLineEdit.text().replace(".", "_")
+        output_dir = "unity2d_all"
+        url = f"https://www-cancer.enish-games.com/v{version}/resource/list/Android"
+        response = requests.get(url).text # Send HTTP GET request to the url and stores it in a response var.
+        file_names = set(re.findall(r"[0-9a-f]{32}", response)) # Find all 32 character names in the response and make unique file names out of them. 
+        find_dir = set(os.listdir(output_dir)) # List all the files in the output dir
+        file_list = list(file_names - find_dir) # Find the files that are not already downloaded
+
+        self.outputDirLabel.setText(f"Output Directory: {os.path.abspath(output_dir)}")
+        self.download_files(url, version, output_dir, file_list)
+
+    def on_latest_version_button_clicked(self):
         try:
-            outputDir = "unity2d_test"
-            version = self.versionEdit.text()
-            version = version.replace('.', '_')
-            logging.info(f"Version: {version}")
-            if not version:
-                logging.info('No version specified, exiting...')
-                return
-            url = f"https://www-cancer.enish-games.com/v{version}/resource/list/Android"
-            logging.info(f"Download url: {url}")
-            response = requests.get(url)
-            if "メンテナンス中" in response.text:
-                raise Exception("Server is in maintenance")
-            if not os.path.exists(outputDir):
-                os.mkdir(outputDir)
+            app_id = "jp.enish.gotopazu"
+            app_details = google_play_scraper.app(app_id)
+            app_version = app_details['version']
+            if app_version:
+                self.versionLineEdit.setText(app_version)
+            else:
+                QMessageBox.critical(self, "Error", f"Failed to get the latest version")
         except Exception as e:
-            #I need to add this line after everything works
-            #QtWidgets.QMessageBox.warning(self, 'Error', f'An error occurred while downloading: {e}')
-            fileNames = set(re.findall(r"[0-9a-f]{32}", response))
-            # find all file names in the response
-            finddir = set(os.listdir("unity2d_test"))
-            # find all file names in the output directory
-            filelist = list(fileNames-finddir)
-            # find the difference between the two sets
-            for file in filelist:
-                if file in outputDir:
-                    logging.info(f"{file} already exists")
-                    continue
-                # if file already exists, skip
-                else:
-                    url = f"https://assets.enish-games.com/assets-cancer/Resources/android/{file}"
-                    logging.info(f"Downloading {file}")
-                    os.system(
-                        " ".join([
-                            'wget',
-                            '--random-wait',
-                            '--no-check-certificate',
-                            '-q',
-                            '-nv',
-                            '-c',
-                            '-N',
-                            f'--user-agent="Mozilla/5.0 (iPhone; CPU iPhone OS 7_0 like Mac OS X) AppleWebKit/537.51.1 (KHTML, like Gecko) Version/7.0 Mobile/11A465 Safari/9537.53"',
-                            url,
-                            '-P',
-                            outputDir
-                        ])
-                    )
-                    time.sleep(random.uniform(0.1, 1))
-                    logging.info(f"{file} downloaded")
-                    # download file and log it
-                    if not file in filelist:
-                        logging.info("All files are downloaded")
-                        exit()
-                        # all files are downloaded, exit
-            
-if __name__ == '__main__':
-    app = QtWidgets.QApplication([])
-    window = MainWindow()
-    app.exec_()
+            error_message = f"Failed to get the latest version: {e}\n{traceback.format_exc()}"
+            QMessageBox.critical(self, "Error", f"Failed to get the latest version: {e}")
 
-#Planning to add : Logs in the gui =
-            #label = QtWidgets.QLabel(self)
-            #label.setText(response.text)
-            #label.setGeometry(-30 , 100 , 300 , 50)
-            #label.show()
+    def download_files(self, url, version, output_dir, file_list):
+        # Parameters for download thread
+        self.download_thread = DownloadThread(url, version, output_dir, file_list)
+        # Connect to log
+        self.download_thread.log_signal.connect(self.update_log)
+        # Connect  to progress bar
+        self.download_thread.progress_signal.connect(self.update_progress)
+        self.download_thread.start()
 
-             # cant believe all this actually works
-             #yeah but you cant make a gui yourself hahahaha L + Ratio + kys
-# hey, if you're reading this, i hope you know what you're doing, because i don't, so don't complain
-#I dont know what im doing either help oml
+    def update_log(self, log_message):
+        self.logTextEdit.append(log_message)
+
+    def update_progress(self, progress):
+        self.progressBar.setValue(progress)
+
+if __name__ == "__main__":
+    app = QApplication(sys.argv)
+    window = MyApp()
+    window.show()
+    sys.exit(app.exec_())
