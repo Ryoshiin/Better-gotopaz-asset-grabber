@@ -17,7 +17,6 @@ These instructions will get you a copy of the project up and running on your loc
 Before running Gotopazu Asset Grabber, ensure you have:
 
 - Python 3.8 or higher installed on your system.
-- The `requests` and `google_play_scraper` Python packages. These can be installed via the `requirements.txt` file included in the project.
 
 ### Installation
 
