@@ -1,0 +1,2 @@
+[console_scripts]
+gotodl = gotodl.main:main

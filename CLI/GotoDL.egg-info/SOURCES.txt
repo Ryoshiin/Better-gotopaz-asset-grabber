@@ -1,0 +1,9 @@
+setup.py
+GotoDL.egg-info/PKG-INFO
+GotoDL.egg-info/SOURCES.txt
+GotoDL.egg-info/dependency_links.txt
+GotoDL.egg-info/entry_points.txt
+GotoDL.egg-info/requires.txt
+GotoDL.egg-info/top_level.txt
+gotodl/__init__.py
+gotodl/main.py
