@@ -1,0 +1,2 @@
+requests
+google_play_scraper
