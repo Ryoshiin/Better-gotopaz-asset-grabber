@@ -66,6 +66,6 @@ pip install -r requirements.txt
 
 I already invested more time than necessary in this project but here are the future improvements if i'm not lazy : 
 - [ ] Fix the GUI icon that needs to be put in the same folder as the executable to be visible.
-- [ ] Add a preferences section to remember the directory and extra features.
+- [X] Add a preferences section to remember the directory and extra features.
 - [ ] Implement a feature to automatically update the GUI application.
 - [ ] Automate the conversion of the assets through AssetStudio.
